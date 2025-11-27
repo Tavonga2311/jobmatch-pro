@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Seeker Dashboard - JobMatch Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('job_seeker_dashboard') }}">
+                <i class="bi bi-person me-2"></i>JobMatch Pro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text user-welcome me-3">
+                    Welcome, {{ session.user_name }}!
+                </span>
+                <a href="{{ url_for('job_seeker_profile') }}" class="btn btn-outline-primary btn-sm me-2">
+                    <i class="bi bi-person-circle me-1"></i>My Profile
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-0">Job Seeker Dashboard</h1>
+                        <p class="text-muted">
+                            {% if profile %}
+                                Find your perfect job match based on your skills and preferences
+                            {% else %}
+                                Complete your profile to get personalized job recommendations
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if not profile %}
+                    <a href="{{ url_for('job_seeker_profile') }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-2"></i>Complete Profile
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if profile %}
+        <!-- Profile Summary -->
+        <div class="card dashboard-card mb-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="h5 mb-0">Your Profile Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="bg-light rounded-circle p-3 d-inline-block mb-2">
+                            <i class="bi bi-person display-6 text-primary"></i>
+                        </div>
+                        <h5>{{ profile.full_name }}</h5>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Desired Position:</strong>
+                                <p>{{ profile.desired_position or 'Not specified' }}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Experience Level:</strong>
+                                <p>{{ profile.experience_level or 'Not specified' }}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Location:</strong>
+                                <p>{{ profile.desired_location or 'Not specified' }}</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <strong>Skills:</strong>
+                                <div class="mt-1">
+                                    {% for skill in profile.skills.split(',') %}
+                                    <span class="badge bg-primary me-1 mb-1">{{ skill.strip() }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Recommendations -->
+        <div class="card dashboard-card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Recommended Jobs For You</h3>
+                <span class="badge bg-light text-dark">{{ job_posts|length }} jobs</span>
+            </div>
+            <div class="card-body">
+                {% if job_posts %}
+                <div class="row">
+                    {% for job_data in job_posts %}
+                    {% set job = job_data.job %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card job-card h-100">
+                            <div class="card-body">
+                                <!-- Match Badge -->
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="card-title mb-0">{{ job.job_title }}</h5>
+                                    <span class="badge match-score {% if job_data.match_score >= 70 %}match-high{% elif job_data.match_score >= 40 %}match-medium{% else %}match-low{% endif %}">
+                                        {{ job_data.match_score }}% match
+                                    </span>
+                                </div>
+                                
+                                <!-- Company Info -->
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="bi bi-building me-1"></i>{{ job.company_name }}
+                                </h6>
+                                
+                                <!-- Job Details -->
+                                <div class="job-meta mb-3">
+                                    {% if job.location %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                                    </div>
+                                    {% endif %}
+                                    {% if job.job_type %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-briefcase me-1"></i>{{ job.job_type }}
+                                    </div>
+                                    {% endif %}
+                                    {% if job.salary_range %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-currency-dollar me-1"></i>{{ job.salary_range }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-calendar me-1"></i>Posted {{ job.created_at.strftime('%Y-%m-%d') }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Required Skills -->
+                                <div class="mb-3">
+                                    <strong>Required Skills:</strong>
+                                    <div class="mt-1">
+                                        {% for skill in job.required_skills.split(',')[:5] %}
+                                        <span class="badge bg-light text-dark me-1 mb-1">{{ skill.strip() }}</span>
+                                        {% endfor %}
+                                        {% if job.required_skills.split(',')|length > 5 %}
+                                        <span class="badge bg-secondary">+{{ job.required_skills.split(',')|length - 5 }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Job Description Preview -->
+                                <p class="card-text small text-muted">
+                                    {{ job.job_description[:150] }}{% if job.job_description|length > 150 %}...{% endif %}
+                                </p>
+                                
+                                <!-- Action Buttons -->
+                                <div class="d-grid gap-2">
+                                    {% if job_data.applied %}
+                                    <button class="btn btn-success" disabled>
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        {% if job_data.application_status %}
+                                            {{ job_data.application_status|title }}
+                                        {% else %}
+                                            Applied
+                                        {% endif %}
+                                    </button>
+                                    {% else %}
+                                    <a href="{{ url_for('apply_job', job_id=job.id) }}" 
+                                       class="btn btn-primary">
+                                        <i class="bi bi-send me-2"></i>Apply Now
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-search display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No Job Recommendations Yet</h4>
+                    <p class="text-muted">We're working on finding the perfect jobs for you. Check back later or update your profile for better matches.</p>
+                    <a href="{{ url_for('job_seeker_profile') }}" class="btn btn-primary">
+                        <i class="bi bi-person-gear me-2"></i>Update Profile
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Application Stats -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h3 class="text-primary">
+                            {{ job_posts|selectattr('applied')|list|length }}
+                        </h3>
+                        <p class="text-muted mb-0">Jobs Applied</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h3 class="text-success">
+                            {{ job_posts|selectattr('match_score', '>=', 70)|list|length }}
+                        </h3>
+                        <p class="text-muted mb-0">Strong Matches</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h3 class="text-info">
+                            {{ job_posts|length }}
+                        </h3>
+                        <p class="text-muted mb-0">Total Recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State - No Profile -->
+        <div class="card dashboard-card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-person-plus display-1 text-muted"></i>
+                <h3 class="text-muted mt-3">Complete Your Profile</h3>
+                <p class="text-muted mb-4">To get personalized job recommendations, please complete your profile with your skills and preferences.</p>
+                <a href="{{ url_for('job_seeker_profile') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-person-gear me-2"></i>Complete My Profile
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

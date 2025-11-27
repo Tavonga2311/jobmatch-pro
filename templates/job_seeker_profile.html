@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - JobMatch Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('job_seeker_dashboard') }}">
+                <i class="bi bi-person me-2"></i>JobMatch Pro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text user-welcome me-3">
+                    Welcome, {{ session.user_name }}!
+                </span>
+                <a href="{{ url_for('job_seeker_dashboard') }}" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Profile Form -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">
+                            {% if profile %}Update{% else %}Complete{% endif %} Your Profile
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Personal Information -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.full_name.label(class="form-label required-field") }}
+                                    {{ form.full_name(class="form-control", placeholder="Enter your full name") }}
+                                    {% if form.full_name.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.full_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.experience_level.label(class="form-label") }}
+                                    {{ form.experience_level(class="form-select") }}
+                                </div>
+                            </div>
+
+                            <!-- Career Preferences -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.desired_position.label(class="form-label") }}
+                                    {{ form.desired_position(class="form-control", placeholder="e.g., Senior Developer, Project Manager") }}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.desired_location.label(class="form-label") }}
+                                    {{ form.desired_location(class="form-control", placeholder="e.g., New York, NY or Remote") }}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.desired_salary.label(class="form-label") }}
+                                {{ form.desired_salary(class="form-control", placeholder="e.g., $80,000 - $100,000") }}
+                            </div>
+
+                            <!-- Skills -->
+                            <div class="mb-3">
+                                {{ form.skills.label(class="form-label required-field") }}
+                                {{ form.skills(class="form-control", rows=3, placeholder="e.g., Python, JavaScript, Project Management, Data Analysis, Communication") }}
+                                {% if form.skills.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.skills.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Enter your skills separated by commas. Be specific for better job matching.</small>
+                            </div>
+
+                            <!-- Resume Upload -->
+                            <div class="mb-4">
+                                {{ form.resume_file.label(class="form-label") }}
+                                {{ form.resume_file(class="form-control") }}
+                                <small class="text-muted">
+                                    Upload your resume (PDF or DOCX) to enhance job matching. Maximum file size: 16MB.
+                                </small>
+                                {% if profile and profile.resume_text %}
+                                <div class="form-text text-success">
+                                    <i class="bi bi-check-circle me-1"></i>Resume already uploaded and processed.
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('job_seeker_dashboard') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Profile Tips -->
+                <div class="card dashboard-card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="h5 mb-0">Tips for Better Job Matching</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>✅ For Better Matches:</h6>
+                                <ul class="small">
+                                    <li>List all relevant technical skills</li>
+                                    <li>Include soft skills and languages</li>
+                                    <li>Be specific about your desired role</li>
+                                    <li>Upload an updated resume</li>
+                                    <li>Specify your experience level</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>💡 Profile Completeness:</h6>
+                                <ul class="small">
+                                    <li>Complete profiles get 3x more matches</li>
+                                    <li>Skills are the most important factor</li>
+                                    <li>Resume upload improves accuracy by 40%</li>
+                                    <li>Update your profile regularly</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Profile Summary -->
+                {% if profile %}
+                <div class="card dashboard-card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="h5 mb-0">Current Profile Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Full Name:</strong> {{ profile.full_name }}</p>
+                                <p><strong>Desired Position:</strong> {{ profile.desired_position or 'Not specified' }}</p>
+                                <p><strong>Experience Level:</strong> {{ profile.experience_level or 'Not specified' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Desired Location:</strong> {{ profile.desired_location or 'Not specified' }}</p>
+                                <p><strong>Desired Salary:</strong> {{ profile.desired_salary or 'Not specified' }}</p>
+                                <p><strong>Resume:</strong> 
+                                    {% if profile.resume_text %}
+                                    <span class="text-success">Uploaded and processed</span>
+                                    {% else %}
+                                    <span class="text-warning">Not uploaded</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Skills:</strong>
+                                <div class="mt-2">
+                                    {% for skill in profile.skills.split(',') %}
+                                    <span class="badge bg-primary me-1 mb-1">{{ skill.strip() }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

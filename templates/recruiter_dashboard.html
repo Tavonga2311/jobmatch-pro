@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiter Dashboard - JobMatch Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('recruiter_dashboard') }}">
+                <i class="bi bi-briefcase me-2"></i>JobMatch Pro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text user-welcome me-3">
+                    Welcome, {{ session.user_name }}!
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="h3 mb-0">Recruiter Dashboard</h1>
+                    <a href="{{ url_for('post_job') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Post New Job
+                    </a>
+                </div>
+                <p class="text-muted">Manage your job posts and analyze candidate applications</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h2 class="stats-number">{{ job_posts|length }}</h2>
+                        <p class="stats-label">Total Jobs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h2 class="stats-number">
+                            {{ job_posts|selectattr('is_active')|list|length }}
+                        </h2>
+                        <p class="stats-label">Active Jobs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h2 class="stats-number">
+                            {% set total_apps = [] %}
+                            {% for job in job_posts %}
+                                {% set _ = total_apps.append(job.applications|length) %}
+                            {% endfor %}
+                            {{ total_apps|sum }}
+                        </h2>
+                        <p class="stats-label">Total Applications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h2 class="stats-number">
+                            {{ job_posts|selectattr('applications')|map(attribute='applications')|map('length')|max|default(0) }}
+                        </h2>
+                        <p class="stats-label">Most Popular Job</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Posts Section -->
+        <div class="card dashboard-card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Your Job Posts</h3>
+                <span class="badge bg-light text-dark">{{ job_posts|length }} jobs</span>
+            </div>
+            <div class="card-body">
+                {% if job_posts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                                <th>Applications</th>
+                                <th>Posted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in job_posts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ job.job_title }}</strong>
+                                    {% if not job.is_active %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ job.company_name }}</td>
+                                <td>{{ job.location or 'Not specified' }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ job.job_type or 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if job.applications|length > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
+                                        {{ job.applications|length }} applications
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ job.created_at.strftime('%Y-%m-%d') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('analyze_cvs', job_id=job.id) }}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Analyze CVs">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </a>
+                                        <a href="{{ url_for('view_applications', job_id=job.id) }}" 
+                                           class="btn btn-outline-info" 
+                                           title="View Applications">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-briefcase display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No Job Posts Yet</h4>
+                    <p class="text-muted">Start by posting your first job to find qualified candidates.</p>
+                    <a href="{{ url_for('post_job') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>Post Your First Job
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="h6 mb-0">Quick Actions</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('post_job') }}" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-2"></i>Post New Job
+                            </a>
+                            {% if job_posts %}
+                            <a href="{{ url_for('analyze_cvs', job_id=job_posts[0].id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-text me-2"></i>Analyze CVs for Latest Job
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="h6 mb-0">Tips for Success</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Use specific skills in job descriptions
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Analyze multiple CVs for better comparison
+                            </li>
+                            <li class="mb-0">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Review applications regularly
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
